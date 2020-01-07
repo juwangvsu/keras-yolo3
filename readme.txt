@@ -1,4 +1,18 @@
 
+-----------------1/7/2020 detection with yolo_video.py--------
+python3 yolo_video.py --model_path model_data/yolo.h5 --classes_path model_data/coco_classes.txt --image
+python3 yolo_video.py --model_path logs/000/trained_weights_final.h5 --classes_path model_data/voc_classes.txt --image
+	interactive provide filename e.g dog2.jpg
+
+bug fixed:
+	msi, modify yolo.py with 
+	config.gpu_options.allow_growth = True
+
+	yolo_video.py: --model replaced by --model_path, --classes replaced by --classes_path
+
+	.h5 file and the voc_classes.txt must match. default coco_classes.txt match model_data/yolo.h5, which
+	is trained with 80 classes coco data. the retrained logs/000/trained_weights_final.h5 use voc2007 data
+
 -----------------1/7/2020 training from a previous step--------
 msi, sda19, tf14-gpu
 (t1) python3 train.py --weights_file logs/000/trained_weights_stage_1.h5 --phase_i 2

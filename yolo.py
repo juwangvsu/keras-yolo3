@@ -2,6 +2,12 @@
 """
 Class definition of YOLO_v3 style detection model on image and video
 """
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
+
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+session = InteractiveSession(config=config)
 
 import colorsys
 import os
@@ -42,6 +48,9 @@ class YOLO(object):
         self.class_names = self._get_class()
         self.anchors = self._get_anchors()
         self.sess = K.get_session()
+        #print(self.__dict__)
+        print(self.model_path)
+        print(self.classes_path)
         self.boxes, self.scores, self.classes = self.generate()
 
     def _get_class(self):
