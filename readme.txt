@@ -24,15 +24,18 @@ train t2 run glance:
 
 bug:
 	gpu memory problem with rtx 2080, this seems to be common on rtx 20xx,
-	the fix config.gpu_options.allow_growth = True 
+	error msg is:  
+        the code works on msi, but not on rtx 2080. error msg "CUDNN_STATUS_INTERNAL_ERROR",
+	tred to fix by "config.gpu_options.allow_growth = True" 
 		cause an error "The Session graph is empty.". notice this
 		is not the problem with /media/student/code1/faster_rcnn which also use keras
 
 fixed: (partial)
 	for rtx 2080, this bug is fixed by comment off this line:
 		   K.clear_session() # get a new session
-		in train.py::create_model()
+		in train.py::create_model(), this seems work, and the training proceed.
 		not sure how it will affect the rest of the code.
+
 -----------------1/6/2020 training steps------------------------
 If you want to use original pretrained weights for YOLOv3:
 0. python3 voc_annotation.py , this create annotate data file from VOCdevkit 
