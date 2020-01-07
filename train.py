@@ -1,15 +1,16 @@
 """
 Retrain the YOLO model for your own dataset.
 """
-#import tensorflow as tf
-#from tensorflow.compat.v1 import ConfigProto
-#from tensorflow.compat.v1 import InteractiveSession
-
-#config = tf.ConfigProto()
-#config.gpu_options.allow_growth = True
-#session = tf.InteractiveSession(config=config)
-
 import tensorflow as tf
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
+
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+session = InteractiveSession(config=config)
+#import os
+#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+#import tensorflow as tf
 import numpy as np
 import keras.backend as K
 from keras.layers import Input, Lambda
@@ -124,7 +125,10 @@ def get_anchors(anchors_path):
 def create_model(input_shape, anchors, num_classes, load_pretrained=True, freeze_body=2,
             weights_path='model_data/yolo_weights.h5'):
     '''create the training model'''
-    K.clear_session() # get a new session
+#    K.clear_session() # get a new session
+#  1/7/2020 clear_session() commented off solve the empty session error with the gpu_options.allow_growth = True
+#	for rtx 2080
+
     image_input = Input(shape=(None, None, 3))
     h, w = input_shape
     num_anchors = len(anchors)
@@ -134,7 +138,7 @@ def create_model(input_shape, anchors, num_classes, load_pretrained=True, freeze
 
     model_body = yolo_body(image_input, num_anchors//3, num_classes)
     print('Create YOLOv3 model with {} anchors and {} classes.'.format(num_anchors, num_classes))
-
+    print(model_body.summary())
     if load_pretrained:
         model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
         print('Load weights {}.'.format(weights_path))
