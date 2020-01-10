@@ -15,7 +15,7 @@ import numpy as np
 import keras.backend as K
 from keras.layers import Input, Lambda
 from keras.models import Model
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD
 from keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 
 from yolo3.model import preprocess_true_boxes, yolo_body, tiny_yolo_body, yolo_loss
@@ -25,6 +25,8 @@ tf.app.flags.DEFINE_string(
     'weights_file', '', 'Binary file with detector weights')
 tf.app.flags.DEFINE_integer(
     'phase_i', 50, '50')
+tf.app.flags.DEFINE_bool(
+    'skip_phasei', False, 'skip phase 1')
 
 
 def _main():
@@ -38,6 +40,7 @@ def _main():
 
     input_shape = (416,416) # multiple of 32, hw
     print('flag.weights_file ', FLAGS.weights_file)
+    print('flag.skip_phasei ', FLAGS.skip_phasei)
     #return
     is_tiny_version = len(anchors)==6 # default setting
     if is_tiny_version:
@@ -69,8 +72,8 @@ def _main():
 
     # Train with frozen layers first, to get a stable loss.
     # Adjust num epochs to your dataset. This step is enough to obtain a not bad model.
-    if True:
-        model.compile(optimizer=Adam(lr=1e-3), loss={
+    if not FLAGS.skip_phasei:
+        model.compile(optimizer=SGD(lr=1e-3), loss={
             # use custom yolo_loss Lambda layer.
             'yolo_loss': lambda y_true, y_pred: y_pred})
 
@@ -84,13 +87,15 @@ def _main():
                 initial_epoch=0,
                 callbacks=[logging, checkpoint])
         model.save_weights(log_dir + 'trained_weights_stage_1.h5')
+    else:
+        print("\n\n---------------skipping phase i\n\n")
 
     # Unfreeze and continue training, to fine-tune.
     # Train longer if the result is not good.
     if True:
         for i in range(len(model.layers)):
             model.layers[i].trainable = True
-        model.compile(optimizer=Adam(lr=1e-4), loss={'yolo_loss': lambda y_true, y_pred: y_pred}) # recompile to apply the change
+        model.compile(optimizer=SGD(lr=1e-3), loss={'yolo_loss': lambda y_true, y_pred: y_pred}) # recompile to apply the change
         print('Unfreeze all of the layers.')
 
         batch_size = 4 # note that more GPU memory is required after unfreezing the body
@@ -99,9 +104,10 @@ def _main():
             steps_per_epoch=max(1, num_train//batch_size),
             validation_data=data_generator_wrapper(lines[num_train:], batch_size, input_shape, anchors, num_classes),
             validation_steps=max(1, num_val//batch_size),
-            epochs=100,
-            initial_epoch=50,
-            callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+            epochs=1200,
+            initial_epoch=600,
+            callbacks=[logging, checkpoint])
+            #callbacks=[logging, checkpoint, reduce_lr, early_stopping])
         model.save_weights(log_dir + 'trained_weights_final.h5')
 
     # Further training if needed.
