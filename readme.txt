@@ -17,6 +17,7 @@ bug fixed:
 msi, sda19, tf14-gpu
 (t1) python3 train.py --weights_file logs/000/trained_weights_stage_1.h5 --phase_i 2
 (t2) python3 train.py --weights_file logs/000/trained_weights_final.h5 --phase_i 2
+(t3) python3 train.py --weights_file logs/000/trained_weights_final.h5 --phase_i 1 --skip_phasei True
 
 	-phase_i : number of epoch for phase i, default 50
 	-weights_file: initial weights
@@ -36,9 +37,13 @@ train t2 run glance:
 	Epoch 51/100
 	562/562 [==============================] - 145s 259ms/step - loss: 26.8667 - val_loss: 22.0058
 
+train t3 stall, loss value stuck at 8.xx
+Epoch 1200/1200
+562/562 [==============================] - 128s 227ms/step - loss: 8.5948 - val_loss: 9.5883
+
 bug:
 	gpu memory problem with rtx 2080, this seems to be common on rtx 20xx,
-	error msg is:  
+	error msg is: 
         the code works on msi, but not on rtx 2080. error msg "CUDNN_STATUS_INTERNAL_ERROR",
 	tred to fix by "config.gpu_options.allow_growth = True" 
 		cause an error "The Session graph is empty.". notice this
