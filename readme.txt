@@ -1,3 +1,12 @@
+----------------------training performance ---------------------
+
+train t3 stall, loss value stuck at 8.xx
+Epoch 1200/1200
+562/562 [==============================] - 128s 227ms/step - loss: 8.5948 - val_loss: 9.5883
+
+homepc, titan, batch size 32,
+Epoch 1167/2000
+70/70 [==============================] - 103s 1s/step - loss: 7.8393 - val_loss: 29.9031
 
 -----------------1/7/2020 detection with yolo_video.py--------
 python3 yolo_video.py --model_path model_data/yolo.h5 --classes_path model_data/coco_classes.txt --image
