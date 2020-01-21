@@ -17,7 +17,7 @@ from keras.layers import Input, Lambda
 from keras.models import Model
 from keras.optimizers import Adam, SGD
 from keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
-
+from callbacks import CustomModelCheckpoint, CustomModelCheckpoint2
 from yolo3.model import preprocess_true_boxes, yolo_body, tiny_yolo_body, yolo_loss
 from yolo3.utils import get_random_data
 FLAGS = tf.app.flags.FLAGS
@@ -37,6 +37,7 @@ def _main():
     class_names = get_classes(classes_path)
     num_classes = len(class_names)
     anchors = get_anchors(anchors_path)
+    print(anchors)
 
     input_shape = (416,416) # multiple of 32, hw
     print('flag.weights_file ', FLAGS.weights_file)
@@ -48,16 +49,28 @@ def _main():
             freeze_body=2, weights_path='model_data/tiny_yolo_weights.h5')
     else:
       if FLAGS.weights_file=='':
-        model = create_model(input_shape, anchors, num_classes,
+        model, model_to_save = create_model(input_shape, anchors, num_classes,
             freeze_body=2, weights_path='model_data/darknet53_weights.h5') # make sure you know what you freeze
       else:
-        model = create_model(input_shape, anchors, num_classes,
+        model, model_to_save = create_model(input_shape, anchors, num_classes,
             freeze_body=2, weights_path=FLAGS.weights_file) # continue train from a provided h5 file
 
 
     logging = TensorBoard(log_dir=log_dir)
     checkpoint = ModelCheckpoint(log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
-        monitor='val_loss', save_weights_only=True, save_best_only=True, period=15)
+        monitor='val_loss', save_best_only=True, period=1)
+    checkpoint2 = CustomModelCheckpoint(
+        model_to_save   = model_to_save,
+        filepath        = log_dir+ 'epp{epoch:03d}-val_loss{val_loss:.3f}.h5', #saved_weights_name,# + '{epoch:02d}.h5', 
+        monitor         = 'val_loss',
+        verbose         = 1,
+        save_best_only  = True,
+        mode            = 'min',
+        period          = 4
+    )
+
+    #checkpoint = ModelCheckpoint(log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
+    #    monitor='val_loss', save_weights_only=True, save_best_only=True, period=15)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
 
@@ -73,7 +86,7 @@ def _main():
     # Train with frozen layers first, to get a stable loss.
     # Adjust num epochs to your dataset. This step is enough to obtain a not bad model.
     if not FLAGS.skip_phasei:
-        model.compile(optimizer=SGD(lr=1e-3), loss={
+        model.compile(optimizer=SGD(lr=1e-4), loss={
             # use custom yolo_loss Lambda layer.
             'yolo_loss': lambda y_true, y_pred: y_pred})
 
@@ -85,8 +98,8 @@ def _main():
                 validation_steps=max(1, num_val//batch_size),
                 epochs=FLAGS.phase_i,
                 initial_epoch=0,
-                callbacks=[logging, checkpoint])
-        model.save_weights(log_dir + 'trained_weights_stage_1.h5')
+                callbacks=[logging, checkpoint2])
+        model_to_save.save(log_dir + 'trained_weights_stage_1.h5')
     else:
         print("\n\n---------------skipping phase i\n\n")
 
@@ -95,20 +108,20 @@ def _main():
     if True:
         for i in range(len(model.layers)):
             model.layers[i].trainable = True
-        model.compile(optimizer=SGD(lr=1e-3), loss={'yolo_loss': lambda y_true, y_pred: y_pred}) # recompile to apply the change
+        model.compile(optimizer=SGD(lr=1e-4), loss={'yolo_loss': lambda y_true, y_pred: y_pred}) # recompile to apply the change
         print('Unfreeze all of the layers.')
 
-        batch_size = 16 # note that more GPU memory is required after unfreezing the body
+        batch_size = 4 # note that more GPU memory is required after unfreezing the body
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
         model.fit_generator(data_generator_wrapper(lines[:num_train], batch_size, input_shape, anchors, num_classes),
             steps_per_epoch=max(1, num_train//batch_size),
             validation_data=data_generator_wrapper(lines[num_train:], batch_size, input_shape, anchors, num_classes),
             validation_steps=max(1, num_val//batch_size),
-            epochs=2000,
-            initial_epoch=1015,
-            callbacks=[logging, checkpoint])
+            epochs=1022,
+            initial_epoch=1021,
+            callbacks=[logging, checkpoint2])
             #callbacks=[logging, checkpoint, reduce_lr, early_stopping])
-        model.save_weights(log_dir + 'trained_weights_final.h5')
+        model_to_save.save(log_dir + 'trained_weights_final.h5')
 
     # Further training if needed.
 
@@ -159,7 +172,7 @@ def create_model(input_shape, anchors, num_classes, load_pretrained=True, freeze
         [*model_body.output, *y_true])
     model = Model([model_body.input, *y_true], model_loss)
 
-    return model
+    return [model, model_body]
 
 def create_tiny_model(input_shape, anchors, num_classes, load_pretrained=True, freeze_body=2,
             weights_path='model_data/tiny_yolo_weights.h5'):
