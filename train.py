@@ -61,7 +61,7 @@ def _main():
         monitor='val_loss', save_best_only=True, period=1)
     checkpoint2 = CustomModelCheckpoint(
         model_to_save   = model_to_save,
-        filepath        = log_dir+ 'epp{epoch:03d}-val_loss{val_loss:.3f}.h5', #saved_weights_name,# + '{epoch:02d}.h5', 
+        filepath        = log_dir+ 'epp{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5', #saved_weights_name,# + '{epoch:02d}.h5', 
         monitor         = 'val_loss',
         verbose         = 1,
         save_best_only  = True,
@@ -117,7 +117,7 @@ def _main():
             steps_per_epoch=max(1, num_train//batch_size),
             validation_data=data_generator_wrapper(lines[num_train:], batch_size, input_shape, anchors, num_classes),
             validation_steps=max(1, num_val//batch_size),
-            epochs=1022,
+            epochs=1100,
             initial_epoch=1021,
             callbacks=[logging, checkpoint2])
             #callbacks=[logging, checkpoint, reduce_lr, early_stopping])

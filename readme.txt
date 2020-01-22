@@ -25,6 +25,13 @@ train.py
 	call yolo_body to create Model, then load_weights,
 	it did not use load_model
 
+-------------1/20/2020 diff msi, homepc, rose ---------------
+train.py:
+	batch_size=4/16/16
+	epochs=1100
+	initial_epoch=1021
+	lr=1e-4
+
 -------------------1/20/2020 checkpoint .h5 bug  ---------------
 Issue:
 	Prio to this fix, the saved .h5  fail load_model(), in both code1/keras-yolo3/predict.py and test_load_model.py here.
@@ -49,18 +56,26 @@ fixed:
 	the original author did not fix.
 
 
-----------------------training performance ---------------------
+----------------------1/21/2020 training performance ---------------------
+t3, msi, batch_size=4
+	after the model_to_save.save() fix), lr=1e-04, discontinue from previous result
+		Epoch 1031/1100
+		562/562 [==============================] - 330s 588ms/step - loss: 21.7668 - val_loss: 17.3943
+	1/21/2020	start epoch 1021, end 1100
+		Epoch 1100/1100 loss: 20.5638 - val_loss: 24.5617
+			epp1033-loss21.884-val_loss12.087.h5
 
-train t3 stall, loss value stuck at 8.xx
-Epoch 1200/1200
-562/562 [==============================] - 128s 227ms/step - loss: 8.5948 - val_loss: 9.5883
-
-homepc, titan, batch size 16,
-Epoch 1167/2000
-70/70 [==============================] - 103s 1s/step - loss: 7.8393 - val_loss: 29.9031
-
-Epoch 1400, still no improvemnt
-
+t3, homepc, titan, batch_size=16,
+	1/xx/2020
+		Epoch 1167/2000
+		103s 1s/step - loss: 7.8393 - val_loss: 29.9031
+		Epoch 1400, still no improvemnt
+	1/21/2020 start epoch 1250, end 1450, from ep1240-loss7.520-val_loss10.503.h5
+		Epoch 1450/1450 loss: 7.3049 - val_loss: 20.060
+			epp1386-loss7.542-val_loss12.664.h5
+	1/22/1020 start epoch 1451, end 1850, from epp1386a
+			loss 7.464 val_loss 9.1
+			epp1539-loss7.464-val_loss9.102.h5
 -----------------1/7/2020 detection with yolo_video.py--------
 python3 yolo_video.py --model_path model_data/yolo.h5 --classes_path model_data/coco_classes.txt --image
 python3 yolo_video.py --model_path model_data/yolov3-voc_9000.h5 --classes_path model_data/voc_classes.txt --image
@@ -102,8 +117,12 @@ train t2 run glance:
 	562/562 [==============================] - 145s 259ms/step - loss: 26.8667 - val_loss: 22.0058
 
 train t3 stall, loss value stuck at 8.xx
-Epoch 1200/1200
-562/562 [==============================] - 128s 227ms/step - loss: 8.5948 - val_loss: 9.5883
+		Epoch 1200/1200
+		562/562 [==============================] - 128s 227ms/step - loss: 8.5948 - val_loss: 9.5883
+
+	1/21/2020 (after the model_to_save.save() fix), lr=1e-04, discontinue from previous result
+		Epoch 1031/1100
+		562/562 [==============================] - 330s 588ms/step - loss: 21.7668 - val_loss: 17.3943
 
 bug:
 	gpu memory problem with rtx 2080, this seems to be common on rtx 20xx,
